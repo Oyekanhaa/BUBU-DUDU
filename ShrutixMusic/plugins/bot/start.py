@@ -1,12 +1,12 @@
 import time
-
+import random
 from pyrogram import filters
 from pyrogram.enums import ChatType
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from py_yt import VideosSearch
+from youtubesearchpython.__future__ import VideosSearch
 
 import config
-from ShrutixMusic import nand
+from ShrutixMusic import app
 from ShrutixMusic.misc import _boot_
 from ShrutixMusic.plugins.sudo.sudoers import sudoers_list
 from ShrutixMusic.utils.database import (
@@ -23,24 +23,33 @@ from ShrutixMusic.utils.inline import help_pannel, private_panel, start_panel
 from config import BANNED_USERS
 from strings import get_string
 
+EFFECT_ID = [
+5046509860389126442,
+5107584321108051014,
+5104841245755180586,
+5159385139981059251,
+]
 
-@nand.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
+
+@app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
 @LanguageStart
 async def start_pm(client, message: Message, _):
     await add_served_user(message.from_user.id)
+    await message.react("🍓")
     if len(message.text.split()) > 1:
         name = message.text.split(None, 1)[1]
         if name[0:4] == "help":
             keyboard = help_pannel(_)
             return await message.reply_photo(
                 photo=config.START_IMG_URL,
+                has_spoiler=True,
                 caption=_["help_1"].format(config.SUPPORT_CHAT),
                 reply_markup=keyboard,
             )
         if name[0:3] == "sud":
             await sudoers_list(client=client, message=message, _=_)
             if await is_on_off(2):
-                return await nand.send_message(
+                return await app.send_message(
                     chat_id=config.LOGGER_ID,
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>sᴜᴅᴏʟɪsᴛ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
@@ -60,7 +69,7 @@ async def start_pm(client, message: Message, _):
                 link = result["link"]
                 published = result["publishedTime"]
             searched_text = _["start_6"].format(
-                title, duration, views, published, channellink, channel, nand.mention
+                title, duration, views, published, channellink, channel, app.mention
             )
             key = InlineKeyboardMarkup(
                 [
@@ -71,14 +80,15 @@ async def start_pm(client, message: Message, _):
                 ]
             )
             await m.delete()
-            await nand.send_photo(
+            await app.send_photo(
                 chat_id=message.chat.id,
                 photo=thumbnail,
+                has_spoiler=True,
                 caption=searched_text,
                 reply_markup=key,
             )
             if await is_on_off(2):
-                return await nand.send_message(
+                return await app.send_message(
                     chat_id=config.LOGGER_ID,
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
@@ -86,30 +96,33 @@ async def start_pm(client, message: Message, _):
         out = private_panel(_)
         await message.reply_photo(
             photo=config.START_IMG_URL,
-            caption=_["start_2"].format(message.from_user.mention, nand.mention),
+            has_spoiler=True,
+            message_effect_id=random.choice(EFFECT_ID),
+            caption=_["start_2"].format(message.from_user.mention, app.mention),
             reply_markup=InlineKeyboardMarkup(out),
         )
         if await is_on_off(2):
-            return await nand.send_message(
+            return await app.send_message(
                 chat_id=config.LOGGER_ID,
                 text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
             )
 
 
-@nand.on_message(filters.command(["start"]) & filters.group & ~BANNED_USERS)
+@app.on_message(filters.command(["start"]) & filters.group & ~BANNED_USERS)
 @LanguageStart
 async def start_gp(client, message: Message, _):
     out = start_panel(_)
     uptime = int(time.time() - _boot_)
     await message.reply_photo(
         photo=config.START_IMG_URL,
-        caption=_["start_1"].format(nand.mention, get_readable_time(uptime)),
+        has_spoiler=True,
+        caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
         reply_markup=InlineKeyboardMarkup(out),
     )
     return await add_served_chat(message.chat.id)
 
 
-@nand.on_message(filters.new_chat_members, group=-1)
+@app.on_message(filters.new_chat_members, group=-1)
 async def welcome(client, message: Message):
     for member in message.new_chat_members:
         try:
@@ -120,29 +133,30 @@ async def welcome(client, message: Message):
                     await message.chat.ban_member(member.id)
                 except:
                     pass
-            if member.id == nand.id:
+            if member.id == app.id:
                 if message.chat.type != ChatType.SUPERGROUP:
                     await message.reply_text(_["start_4"])
-                    return await nand.leave_chat(message.chat.id)
+                    return await app.leave_chat(message.chat.id)
                 if message.chat.id in await blacklisted_chats():
                     await message.reply_text(
                         _["start_5"].format(
-                            nand.mention,
-                            f"https://t.me/{nand.username}?start=sudolist",
+                            app.mention,
+                            f"https://t.me/{app.username}?start=sudolist",
                             config.SUPPORT_CHAT,
                         ),
                         disable_web_page_preview=True,
                     )
-                    return await nand.leave_chat(message.chat.id)
+                    return await app.leave_chat(message.chat.id)
 
                 out = start_panel(_)
                 await message.reply_photo(
                     photo=config.START_IMG_URL,
+                    has_spoiler=True,
                     caption=_["start_3"].format(
                         message.from_user.first_name,
-                        nand.mention,
+                        app.mention,
                         message.chat.title,
-                        nand.mention,
+                        app.mention,
                     ),
                     reply_markup=InlineKeyboardMarkup(out),
                 )
@@ -150,4 +164,3 @@ async def welcome(client, message: Message):
                 await message.stop_propagation()
         except Exception as ex:
             print(ex)
-
